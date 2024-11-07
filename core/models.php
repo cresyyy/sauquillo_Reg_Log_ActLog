@@ -1,5 +1,82 @@
 <?php  
 
+require_once 'dbConfig.php';
+
+//Register User
+function insertNewUser($pdo, $username, $password, $firstName, $lastName, $age, $birthday, $address) {
+    $checkUserSql = "SELECT * FROM user_passwords WHERE username = ?";
+    $checkUserSqlStmt = $pdo->prepare($checkUserSql);
+    $checkUserSqlStmt->execute([$username]);
+
+    if ($checkUserSqlStmt->rowCount() == 0) {
+        // Adjust the SQL to include additional fields
+        $sql = "INSERT INTO user_passwords (username, password, firstName, lastName, age, birthday, address) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        $executeQuery = $stmt->execute([$username, $password, $firstName, $lastName, $age, $birthday, $address]);
+
+        if ($executeQuery) {
+            $_SESSION['message'] = "User entry successfully inserted!";
+            return true;
+        } else {
+            $_SESSION['message'] = "An error occurred from the query";
+        }
+    } else {
+        $_SESSION['message'] = "Registration failed: User already registered.";
+    }
+}
+
+// Log in user
+function loginUser($pdo, $username, $inputPassword) { 
+    $sql = "SELECT * FROM user_passwords WHERE username = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$username]);
+
+    if ($stmt->rowCount() == 1) {
+        $userInfoRow = $stmt->fetch();
+        $usernameFromDB = $userInfoRow['username']; 
+        $hashedPasswordFromDB = $userInfoRow['password']; // This is the hashed password
+
+        // To compare the entered password with the hashed password, use password_verify.
+        if (password_verify($inputPassword, $hashedPasswordFromDB)) {
+            // Login is successful
+            $_SESSION['username'] = $usernameFromDB;
+            $_SESSION['message'] = "You’ve logged in successfully. Welcome aboard!";
+            return true;
+        } else {
+            // Password is incorrect
+            $_SESSION['message'] = "User exists, but the password does not match.";
+            return false;
+        }
+    } else {
+        // Username doesn't exist in the database
+        $_SESSION['message'] = "We couldn't find a user with that username. Please register first.";
+        return false;
+    }
+}
+
+
+function getAllUsers($pdo) {
+	$sql = "SELECT * FROM user_passwords";
+	$stmt = $pdo->prepare($sql);
+	$executeQuery = $stmt->execute();
+
+	if ($executeQuery) {
+		return $stmt->fetchAll();
+	}
+
+}
+
+function getUserByID($pdo, $user_id) {
+	$sql = "SELECT * FROM user_passwords WHERE user_id = ?";
+	$stmt = $pdo->prepare($sql);
+	$executeQuery = $stmt->execute([$user_id]);
+	if ($executeQuery) {
+		return $stmt->fetch();
+	}
+}
+
+
+// Inserting client
 function insertClient($pdo, $clientName, $contactPerson, $email, 
 	$phone, $storeAddress) {
 
@@ -16,19 +93,20 @@ function insertClient($pdo, $clientName, $contactPerson, $email,
 }
 
 
-
-function updateClient($pdo, $contactPerson, $email, 
+// Updating client
+function updateClient($pdo, $clientName, $contactPerson, $email, 
 	$phone, $storeAddress, $clientID) {
 
 	$sql = "UPDATE Clients
-				SET contactPerson = ?,
+				SET clientName = ?,
+					contactPerson = ?,
 					email = ?,
 					phone = ?, 
 					storeAddress = ?
 				WHERE clientID = ?
 			";
 	$stmt = $pdo->prepare($sql);
-	$executeQuery = $stmt->execute([$contactPerson, $email, 
+	$executeQuery = $stmt->execute([$clientName, $contactPerson, $email, 
 	$phone, $storeAddress, $clientID]);
 	
 	if ($executeQuery) {
@@ -37,7 +115,7 @@ function updateClient($pdo, $contactPerson, $email,
 
 }
 
-
+//Deleting client
 function deleteClient($pdo, $clientID) {
 	$deleteShipment = "DELETE FROM Shipments WHERE clientID = ?";
 	$deleteStmt = $pdo->prepare($deleteShipment);
@@ -55,8 +133,6 @@ function deleteClient($pdo, $clientID) {
 	}
 	
 }
-
-
 
 
 function getAllClients($pdo) {
@@ -80,9 +156,7 @@ function getClientByID($pdo, $clientID) {
 }
 
 
-
-
-
+// Getting shipment by the client
 function getShipmentByClient($pdo, $clientID) {
 	
 	$sql = "SELECT 
@@ -97,17 +171,18 @@ function getShipmentByClient($pdo, $clientID) {
 			FROM Shipments
 			JOIN Clients ON Shipments.clientID = Clients.clientID
 			WHERE Shipments.clientID = ? 
-			GROUP BY Shipments.shipmentWeight;
+			GROUP BY Shipments.shipmentID ASC;
 			";
 
-	$stmt = $pdo->prepare($sql);
-	$executeQuery = $stmt->execute([$clientID]);
-	if ($executeQuery) {
-		return $stmt->fetchAll();
-	}
+$stmt = $pdo->prepare($sql);
+$executeQuery = $stmt->execute([$clientID]);
+if ($executeQuery) {
+	return $stmt->fetchAll(PDO::FETCH_ASSOC); 
+}
+return [];
 }
 
-
+// Inserting shipment
 function insertShipment($pdo, $shipmentWeight, $shipmentMethod, $deliveryAddress, $estimatedDeliveryDate, $carrier, $clientID) {
 	$sql = "INSERT INTO Shipments (shipmentWeight, shipmentMethod, deliveryAddress, estimatedDeliveryDate, carrier, clientID) VALUES (?,?,?,?,?,?)";
 	$stmt = $pdo->prepare($sql);
@@ -140,6 +215,7 @@ function getShipmentByID($pdo, $shipmentID) {
 	}
 }
 
+// Updating shipment
 function updateShipment($pdo, $shipmentWeight, $shipmentMethod, $deliveryAddress, $estimatedDeliveryDate, $carrier, $shipmentID) {
 	$sql = "UPDATE Shipments
 			SET shipmentWeight = ?,
@@ -157,6 +233,7 @@ function updateShipment($pdo, $shipmentWeight, $shipmentMethod, $deliveryAddress
 	}
 }
 
+// Deleting shipment
 function deleteShipment($pdo, $shipmentID) {
 	$sql = "DELETE FROM Shipments WHERE shipmentID = ?";
 	$stmt = $pdo->prepare($sql);

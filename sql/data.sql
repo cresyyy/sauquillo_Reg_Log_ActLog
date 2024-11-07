@@ -1,3 +1,14 @@
+CREATE TABLE user_passwords (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    firstName VARCHAR(50) NOT NULL,
+    lastName VARCHAR(50) NOT NULL,
+    age INT NOT NULL CHECK (age > 0 AND age <= 120), 
+    birthday DATE NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE Clients(
     clientID INT PRIMARY KEY AUTO_INCREMENT,
     clientName VARCHAR(50),
@@ -5,7 +16,10 @@ CREATE TABLE Clients(
     email VARCHAR(100),
     phone VARCHAR(15),
     storeAddress TEXT,
-    registrationDate DATE DEFAULT CURRENT_DATE
+    createdBy VARCHAR(50),
+    lastUpdated VARCHAR(50),
+    registrationDate DATE DEFAULT CURRENT_DATE,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Shipments(
@@ -16,5 +30,9 @@ CREATE TABLE Shipments(
     deliveryAddress TEXT NOT NULL,
     estimatedDeliveryDate DATE,
     carrier VARCHAR(100),
-    dateAdded DATE DEFAULT CURRENT_DATE
+    createdBy VARCHAR(50),
+    lastUpdated VARCHAR(50),
+    dateAdded DATE DEFAULT CURRENT_DATE,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
