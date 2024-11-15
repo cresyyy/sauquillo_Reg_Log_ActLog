@@ -3,7 +3,7 @@ session_start();
 $host = "localhost";
 $user = "root";
 $password = "";
-$dbname = "sauquillo_business";
+$dbname = "sauquillo_search_return";
 $dsn = "mysql:host={$host};dbname={$dbname}";
 
 $pdo = new PDO($dsn,$user,$password);
