@@ -164,6 +164,7 @@ if (!isset($_SESSION['username'])) {
     </form>
     <a href="insert.php" class="nav-link">Insert New Applicant</a>
     <a href="index.php" class="nav-link">Clear Search Query</a>
+	<a href="activitylogs.php" class="nav-link">Activity Logs</a>
   </div>
 </nav>
 

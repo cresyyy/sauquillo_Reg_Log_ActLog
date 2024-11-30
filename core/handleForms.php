@@ -37,12 +37,35 @@ if (isset($_POST['deleteUserBtn'])) {
 	}
 }
 
-if (isset($_GET['searchBtn'])) {
-	$searchForAUser = searchForAUser($pdo, $_GET['searchInput']);
-	foreach ($searchForAUser as $row) {
-		echo "";
-	}
+if (isset($_GET['searchBtn'])) { 
+    $searchQuery = $_GET['searchInput'];
+    $searchForAUser = searchForAUser($pdo, $searchQuery);
+    
+    foreach ($searchForAUser as $row) {
+        echo ""; 
+    }
+
+    if (!empty($searchForAUser)) {
+        foreach ($searchForAUser as $row) {
+            insertAnActivityLog(
+                $pdo,
+                "VIEW", 
+                $row['applicationID'],
+                $row['first_name'],
+                $row['last_name'],
+                $row['email'],
+                $row['phone'],
+                $row['resume_url'],
+                $row['years_of_experience'],
+                $row['qualifications'],
+                $row['specialization'],
+                $row['license_num'],
+                $_SESSION['username'] 
+            );
+        }
+    }
 }
+
 
 if (isset($_POST['insertNewUserBtn'])) {
 	$username = trim($_POST['username']);

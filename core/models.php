@@ -37,37 +37,92 @@ function searchForAUser($pdo, $searchQuery) {
 }
 
 
+function insertAnActivityLog($pdo, $operation, $applicationID, $first_name, $last_name, $email, $phone, $resume_url, $years_of_experience, $qualifications, $specialization, $license_num, $username) {
 
-function insertNewUser($pdo, $first_name, $last_name, $email, 
-	$phone, $resume_url, $years_of_experience, $qualifications, $specialization, $license_num) {
-
-	$sql = "INSERT INTO nurses 
-			(
-				first_name,
-				last_name,
-				email,
-				phone,
-				resume_url,
-				years_of_experience,
-				qualifications,
-				specialization,
-                license_num
-			)
-			VALUES (?,?,?,?,?,?,?,?,?)
-			";
+	$sql = "INSERT INTO activity_logs (operation, applicationID, first_name, last_name, email, phone, resume_url, years_of_experience, qualifications, specialization, license_num, username) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
 
 	$stmt = $pdo->prepare($sql);
-	$executeQuery = $stmt->execute([
-		$first_name, $last_name, $email, 
-		$phone, $resume_url, $years_of_experience, 
-		$qualifications, $specialization,$license_num,
-	]);
+	$executeQuery = $stmt->execute([$operation, $applicationID, $first_name, $last_name, $email, $phone, $resume_url, $years_of_experience, $qualifications, $specialization, $license_num, $username]);
 
 	if ($executeQuery) {
 		return true;
 	}
 
 }
+
+function getAllActivityLogs($pdo) {
+	$sql = "SELECT * FROM activity_logs";
+	$stmt = $pdo->prepare($sql);
+	if ($stmt->execute()) {
+		return $stmt->fetchAll();
+	}
+}
+
+function insertNewUser($pdo, $first_name, $last_name, $email, 
+    $phone, $resume_url, $years_of_experience, $qualifications, $specialization, $license_num) {
+
+    $currentUser = $_SESSION['username'];
+
+    $sql = "INSERT INTO nurses 
+            (
+                first_name,
+                last_name,
+                email,
+                phone,
+                resume_url,
+                years_of_experience,
+                qualifications,
+                specialization,
+                license_num,
+                added_by,
+                last_updated_by
+            )
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+
+    $stmt = $pdo->prepare($sql);
+    $executeQuery = $stmt->execute([
+        $first_name, $last_name, $email, 
+        $phone, $resume_url, $years_of_experience, 
+        $qualifications, $specialization, $license_num,
+        $currentUser, $currentUser 
+    ]);
+
+    if ($executeQuery) {
+
+        $findInsertedItemSQL = "SELECT * FROM nurses ORDER BY date_added DESC LIMIT 1";
+        $stmtfindInsertedItemSQL = $pdo->prepare($findInsertedItemSQL);
+        $stmtfindInsertedItemSQL->execute();
+        $getApplicationID = $stmtfindInsertedItemSQL->fetch();
+
+        $insertAnActivityLog = insertAnActivityLog($pdo, "INSERT", $getApplicationID['applicationID'], 
+            $getApplicationID['first_name'], $getApplicationID['last_name'], $getApplicationID['email'], 
+            $getApplicationID['phone'], $getApplicationID['resume_url'], 
+            $getApplicationID['years_of_experience'], $getApplicationID['qualifications'], 
+            $getApplicationID['specialization'], $getApplicationID['license_num'], $currentUser);
+
+        if ($insertAnActivityLog) {
+            $response = array(
+                "status" => "200",
+                "message" => "User and activity log added successfully!"
+            );
+        } else {
+            $response = array(
+                "status" => "400",
+                "message" => "Failed to insert activity log."
+            );
+        }
+    } else {
+        $response = array(
+            "status" => "400",
+            "message" => "Failed to insert user data."
+        );
+    }
+
+    return $response;
+}
+
+
+
 
 function editUser($pdo, $first_name, $last_name, $email, $phone, $resume_url, $years_of_experience, $qualifications, $specialization, $license_num, $applicationID) {
     $sql = "UPDATE nurses 
@@ -79,7 +134,8 @@ function editUser($pdo, $first_name, $last_name, $email, $phone, $resume_url, $y
                 years_of_experience = :years_of_experience,
                 qualifications = :qualifications,
                 specialization = :specialization,
-                license_num = :license_num
+                license_num = :license_num,
+                last_updated_by = :last_updated_by
             WHERE applicationID = :applicationID";
 
     $stmt = $pdo->prepare($sql);
@@ -94,22 +150,93 @@ function editUser($pdo, $first_name, $last_name, $email, $phone, $resume_url, $y
         ':qualifications' => $qualifications,
         ':specialization' => $specialization,
         ':license_num' => $license_num,
+        ':last_updated_by' => $_SESSION['username'], 
         ':applicationID' => $applicationID
     ]);
 
-    return $executeQuery;
+    if ($executeQuery) {
+
+        $findInsertedItemSQL = "SELECT * FROM nurses WHERE applicationID = ?";
+        $stmtfindInsertedItemSQL = $pdo->prepare($findInsertedItemSQL);
+        $stmtfindInsertedItemSQL->execute([$applicationID]);
+        $getApplicationID = $stmtfindInsertedItemSQL->fetch();
+
+        
+        $insertAnActivityLog = insertAnActivityLog(
+            $pdo, 
+            "UPDATE", 
+            $getApplicationID['applicationID'], 
+            $getApplicationID['first_name'], 
+            $getApplicationID['last_name'], 
+            $getApplicationID['email'], 
+            $getApplicationID['phone'], 
+            $getApplicationID['resume_url'], 
+            $getApplicationID['years_of_experience'], 
+            $getApplicationID['qualifications'], 
+            $getApplicationID['specialization'], 
+            $getApplicationID['license_num'], 
+            $_SESSION['username']
+        );
+
+        if ($insertAnActivityLog) {
+            $response = array(
+                "status" => "200",
+                "message" => "Updated the branch and activity log successfully!"
+            );
+        } else {
+            $response = array(
+                "status" => "400",
+                "message" => "Insertion of activity log failed!"
+            );
+        }
+    } else {
+        $response = array(
+            "status" => "400",
+            "message" => "An error has occurred with the query!"
+        );
+    }
+
+    return $response;
 }
 
 
+
 function deleteUser($pdo, $applicationID) {
-	$sql = "DELETE FROM nurses WHERE applicationID = ?";
+	$response = array();
+	$sql = "SELECT * FROM nurses WHERE applicationID = ?";
 	$stmt = $pdo->prepare($sql);
 	$executeQuery = $stmt->execute([$applicationID]);
+	$getApplicationByID = $stmt->fetch();
 
-	if ($executeQuery) {
-		return true;
+	$insertAnActivityLog = insertAnActivityLog($pdo, "DELETE", $getApplicationByID['applicationID'], 
+		$getApplicationByID['first_name'], $getApplicationByID['last_name'], $getApplicationByID['email'], $getApplicationByID['phone'], $getApplicationByID['resume_url'], $getApplicationByID['years_of_experience'], $getApplicationByID['qualifications'], $getApplicationByID['specialization'], $getApplicationByID['license_num'],  $_SESSION['username']);
+
+	if ($insertAnActivityLog) {
+		$deleteSql = "DELETE FROM nurses WHERE applicationID = ?";
+		$deleteStmt = $pdo->prepare($deleteSql);
+		$deleteQuery = $deleteStmt->execute([$applicationID]);
+
+		if ($deleteQuery) {
+			$response = array(
+				"status" =>"200",
+				"message"=>"Deleted the branch successfully!"
+			);
+		}
+		else {
+			$response = array(
+				"status" =>"400",
+				"message"=>"Insertion of activity log failed!"
+			);
+		}
 	}
-	return false;
+	else {
+		$response = array(
+			"status" =>"400",
+			"message"=>"An error has occured with the query!"
+		);
+	}
+
+	return $response;
 }
 
 

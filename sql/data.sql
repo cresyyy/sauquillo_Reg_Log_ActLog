@@ -1,3 +1,12 @@
+CREATE TABLE user_accounts (
+	user_id INT AUTO_INCREMENT PRIMARY KEY,
+	username VARCHAR(255),
+	first_name VARCHAR(255),
+	last_name VARCHAR(255),
+	password TEXT,
+	date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+);
+
 CREATE TABLE nurses ( 
     applicationID INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(255),
@@ -8,24 +17,36 @@ CREATE TABLE nurses (
     years_of_experience INT,
     qualifications TEXT, 
     specialization VARCHAR(255),
-    license_num VARCHAR(50) UNIQUE,
-    date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    license_num VARCHAR(50),
+    date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    added_by VARCHAR(255),
+	last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	last_updated_by VARCHAR(255)
 );
 
-CREATE TABLE user_accounts (
-	user_id INT AUTO_INCREMENT PRIMARY KEY,
-	username VARCHAR(255),
+CREATE TABLE activity_logs (
+	activity_log_id INT AUTO_INCREMENT PRIMARY KEY,
+	operation VARCHAR(255),
+	applicationID INT,
 	first_name VARCHAR(255),
-	last_name VARCHAR(255),
-	password TEXT,
+    last_name VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(15),
+    resume_url VARCHAR(255),
+    years_of_experience INT,
+    qualifications TEXT, 
+    specialization VARCHAR(255),
+    license_num VARCHAR(50),
+	username VARCHAR(255),
 	date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
 );
+
 
 INSERT INTO nurses (applicationID, first_name, last_name, email, phone, resume_url, years_of_experience, qualifications, specialization, license_num, date_added) 
 VALUES 
 (1, 'Darrin', 'Fawlks', 'dfawlks0@xinhuanet.com', '123-456-7890', 'http://short.ly/dfawlks', 5, 'BSc Nursing, Critical Care Certification', 'Critical Care', 'LIC100001', '2024-05-09 22:12:22'),
 (2, 'Cindi', 'Baily', 'cbaily1@tripod.com', '123-456-7891', 'http://short.ly/cbaily', 3, 'Diploma in Geriatric Nursing', 'Geriatrics', 'LIC100002', '2024-06-17 03:17:53'),
-(3, 'Caressa', 'Amerighi', 'camerighi2@mit.edu', '123-456-7892', '123-456-7892', 'http://short.ly/camerighi', 4, 'BSc Nursing, EMT Certification', 'Emergency', 'LIC100003', '2024-10-23 19:16:05'),
+(3, 'Caressa', 'Amerighi', 'camerighi2@mit.edu', '123-456-7892', 'http://short.ly/camerighi', 4, 'BSc Nursing, EMT Certification', 'Emergency', 'LIC100003', '2024-10-23 19:16:05'),
 (4, 'Mufi', 'Lisett', 'mlisett3@pagesperso-orange.fr', '123-456-7893', 'http://short.ly/mlisett', 6, 'BSc Nursing, ICU Specialist Certification', 'Intensive Care', 'LIC100004', '2024-09-09 19:48:10'),
 (5, 'Yvon', 'Fendt', 'yfendt4@who.int', '123-456-7894', 'http://short.ly/yfendt', 2, 'Diploma in Pediatric Nursing', 'Pediatrics', 'LIC100005', '2024-04-19 19:25:56'),
 (6, 'Bert', 'Filipychev', 'bfilipychev5@abc.net.au', '123-456-7895', 'http://short.ly/bfilipychev', 3, 'Associate Degree in Nursing', 'Pediatrics', 'LIC100006', '2024-02-22 02:38:49'),
